@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan Results — FixMyADA</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:   #0F172A;
+      --navy2:  #1E293B;
+      --amber:  #F59E0B;
+      --amber2: #D97706;
+      --white:  #FFFFFF;
+      --slate:  #64748B;
+      --muted:  #94A3B8;
+      --surface:#F8FAFC;
+      --border: #E2E8F0;
+      --red:    #DC2626;
+      --orange: #EA580C;
+      --yellow: #D97706;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--surface);
+      color: var(--navy);
+    }
+    nav {
+      background: var(--navy);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+    }
+    .nav-logo { color: var(--amber); font-size: 1.25rem; font-weight: 800; text-decoration: none; }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-right a { color: var(--muted); text-decoration: none; font-size: 0.875rem; }
+    .btn-nav {
+      background: var(--amber); color: var(--navy); font-weight: 700;
+      padding: 0.5rem 1.25rem; border-radius: 6px; font-size: 0.875rem;
+      text-decoration: none;
+    }
+
+    /* HEADER */
+    .scan-header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 2rem 2rem 1.5rem;
+    }
+    .scan-header-inner { max-width: 900px; margin: 0 auto; }
+    .scan-url { color: var(--amber); font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .scan-meta { color: var(--muted); font-size: 0.8rem; margin-bottom: 1.5rem; }
+    .summary-bar {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .summary-pill {
+      padding: 0.5rem 1.25rem;
+      border-radius: 999px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .pill-critical { background: rgba(220,38,38,0.2); color: #FCA5A5; }
+    .pill-serious  { background: rgba(234,88,12,0.2); color: #FCD34D; }
+    .pill-moderate { background: rgba(217,119,6,0.2); color: #FDE68A; }
+    .pill-num { font-size: 1.1rem; }
+
+    /* UPGRADE BANNER */
+    .upgrade-banner {
+      background: linear-gradient(135deg, #1E293B, #0F172A);
+      border: 1px solid var(--amber);
+      border-radius: 12px;
+      padding: 1.25rem 1.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      max-width: 900px;
+      margin: 1.5rem auto 0;
+    }
+    .upgrade-text { color: var(--white); }
+    .upgrade-text strong { color: var(--amber); }
+    .upgrade-text p { font-size: 0.875rem; color: var(--muted); margin-top: 0.25rem; }
+    .btn-upgrade {
+      background: var(--amber);
+      color: var(--navy);
+      font-weight: 700;
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      white-space: nowrap;
+    }
+
+    /* MAIN */
+    main { max-width: 900px; margin: 2rem auto; padding: 0 2rem 4rem; }
+
+    .section-heading {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--slate);
+      margin-bottom: 1rem;
+      margin-top: 2rem;
+    }
+
+    /* VIOLATION CARD */
+    .violation-card {
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      animation: fadeUp 0.3s ease both;
+    }
+    .violation-card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .violation-card-header:hover { background: #FAFAFA; }
+    .impact-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .badge-critical { background: #FEE2E2; color: var(--red); }
+    .badge-serious  { background: #FFF7ED; color: var(--orange); }
+    .badge-moderate { background: #FFFBEB; color: var(--yellow); }
+    .violation-title { font-size: 0.95rem; font-weight: 700; flex: 1; }
+    .violation-wcag { font-size: 0.75rem; color: var(--muted); }
+    .chevron { color: var(--muted); font-size: 0.85rem; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+
+    .violation-body {
+      padding: 1.25rem;
+      display: none;
+    }
+    .violation-body.open { display: block; }
+
+    /* LEFT BORDER BY SEVERITY */
+    .border-critical { border-left: 4px solid var(--red); }
+    .border-serious  { border-left: 4px solid var(--orange); }
+    .border-moderate { border-left: 4px solid var(--yellow); }
+
+    .code-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.35rem;
+    }
+    .code-label.before { color: var(--red); }
+    .code-label.after  { color: #16A34A; }
+    .code-block {
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.8rem;
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-before { background: #FEF2F2; color: #7F1D1D; border-left: 3px solid var(--red); }
+    .code-after  { background: #F0FDF4; color: #14532D; border-left: 3px solid #16A34A; }
+
+    .instruction-box {
+      background: #F8FAFC;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-size: 0.875rem;
+      color: #334155;
+      margin-top: 0.5rem;
+    }
+    .instruction-box .label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--slate);
+      margin-bottom: 0.3rem;
+    }
+
+    /* BLURRED / LOCKED CARD */
+    .violation-card.locked {
+      position: relative;
+    }
+    .violation-card.locked .violation-body {
+      display: block;
+      filter: blur(4px);
+      pointer-events: none;
+      user-select: none;
+    }
+    .lock-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(248,250,252,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 0 0 12px 12px;
+      top: 60px;
+    }
+    .lock-badge {
+      background: var(--navy);
+      color: var(--white);
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-align: center;
+    }
+    .lock-badge a { color: var(--amber); text-decoration: none; }
+
+    /* DOWNLOAD ROW */
+    .download-row {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-top: 2.5rem;
+      padding: 1.5rem;
+      background: var(--white);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      align-items: center;
+      justify-content: space-between;
+    }
+    .download-row p { font-size: 0.875rem; color: var(--slate); }
+    .download-row strong { color: var(--navy); display: block; font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .btn-pdf {
+      background: var(--navy);
+      color: var(--white);
+      font-weight: 700;
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn-pdf:hover { background: #1E293B; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">FixMyADA</a>
+  <div class="nav-right">
+    <a href="/dashboard">Dashboard</a>
+    <a href="/#pricing" class="btn-nav">Upgrade</a>
+  </div>
+</nav>
+
+<div class="scan-header">
+  <div class="scan-header-inner">
+    <div class="scan-url" id="scan-url">Loading...</div>
+    <div class="scan-meta" id="scan-meta">Scanning...</div>
+    <div class="summary-bar" id="summary-bar"></div>
+
+    <div class="upgrade-banner">
+      <div class="upgrade-text">
+        <strong>Get your full report + attorney-ready PDF for $79/mo</strong>
+        <p>Free scan shows the first 3 violations. Upgrade to see all violations with code fixes and download your compliance report.</p>
+      </div>
+      <a href="/#pricing" class="btn-upgrade">Unlock full report &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="section-heading">Violations found — ordered by severity</div>
+  <div id="violations-list"></div>
+  <div class="download-row" id="download-row" style="display:none;">
+    <div>
+      <strong>Attorney-ready PDF Report</strong>
+      <p>Includes all violations, WCAG criteria, before/after code fixes, and a legal disclaimer footer.</p>
+    </div>
+    <a href="/report/demo-001/pdf" class="btn-pdf" target="_blank">&#8681; Download PDF Report</a>
+  </div>
+</main>
+
+<script>
+  const SCAN_ID = window.location.pathname.split('/').pop();
+
+  fetch('/api/scan/' + SCAN_ID)
+    .then(r => r.json())
+    .then(scan => renderScan(scan))
+    .catch(() => {
+      document.getElementById('violations-list').innerHTML =
+        '<p style="color:red">Could not load scan data.</p>';
+    });
+
+  function renderScan(scan) {
+    document.getElementById('scan-url').textContent = scan.url;
+    document.getElementById('scan-meta').textContent =
+      'Scanned: ' + new Date(scan.scannedAt).toLocaleString() + '  \u00b7  WCAG 2.2 AA';
+
+    const critical = scan.violations.filter(v => v.impact === 'critical').length;
+    const serious  = scan.violations.filter(v => v.impact === 'serious').length;
+    const moderate = scan.violations.filter(v => v.impact === 'moderate').length;
+
+    const bar = document.getElementById('summary-bar');
+    bar.innerHTML = `
+      <div class="summary-pill pill-critical"><span class="pill-num">${critical}</span> Critical</div>
+      <div class="summary-pill pill-serious"><span class="pill-num">${serious}</span> Serious</div>
+      <div class="summary-pill pill-moderate"><span class="pill-num">${moderate}</span> Moderate</div>
+    `;
+
+    const list = document.getElementById('violations-list');
+    list.innerHTML = '';
+
+    scan.violations.forEach((v, i) => {
+      const free = i < 3;  // first 3 shown in full, rest locked
+      const card = document.createElement('div');
+      card.className = 'violation-card border-' + v.impact + (free ? '' : ' locked');
+
+      const escapedBefore = escapeHtml(v.before);
+      const escapedAfter  = escapeHtml(v.after);
+
+      card.innerHTML = `
+        <div class="violation-card-header" onclick="toggleCard(this)">
+          <span class="impact-badge badge-${v.impact}">${v.impact}</span>
+          <div style="flex:1">
+            <div class="violation-title">${v.description}</div>
+            <div class="violation-wcag">${v.wcag}</div>
+          </div>
+          <span class="chevron">&#9660;</span>
+        </div>
+        <div class="violation-body${free ? ' open' : ''}">
+          <div class="code-label before">Before (broken)</div>
+          <div class="code-block code-before">${escapedBefore}</div>
+          <div class="code-label after">After (fixed)</div>
+          <div class="code-block code-after">${escapedAfter}</div>
+          <div class="instruction-box">
+            <div class="label">What to do</div>
+            ${v.instruction}
+          </div>
+        </div>
+        ${!free ? `<div class="lock-overlay"><div class="lock-badge">&#128274; <a href="/#pricing">Upgrade to unlock</a></div></div>` : ''}
+      `;
+      list.appendChild(card);
+    });
+
+    // Show PDF download row (gated — shown as teaser)
+    const dl = document.getElementById('download-row');
+    dl.style.display = 'flex';
+  }
+
+  function toggleCard(header) {
+    const card = header.closest('.violation-card');
+    if (card.classList.contains('locked')) return;
+    const body = card.querySelector('.violation-body');
+    const chevron = header.querySelector('.chevron');
+    const isOpen = body.classList.contains('open');
+    body.classList.toggle('open', !isOpen);
+    chevron.classList.toggle('open', !isOpen);
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>

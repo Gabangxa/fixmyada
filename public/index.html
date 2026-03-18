@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FixMyADA — WCAG Accessibility Scanner with Code Fixes</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:   #0F172A;
+      --navy2:  #1E293B;
+      --amber:  #F59E0B;
+      --amber2: #D97706;
+      --white:  #FFFFFF;
+      --slate:  #64748B;
+      --muted:  #94A3B8;
+      --surface:#F8FAFC;
+      --border: #E2E8F0;
+      --red:    #DC2626;
+      --orange: #EA580C;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--white);
+      color: var(--navy);
+      line-height: 1.6;
+    }
+
+    /* ---- NAV ---- */
+    nav {
+      background: var(--navy);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      color: var(--amber);
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .btn-nav {
+      background: var(--amber);
+      color: var(--navy);
+      font-weight: 700;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-nav:hover { background: var(--amber2); color: var(--navy); }
+
+    /* ---- ALERT BAR ---- */
+    .alert-bar {
+      background: #7F1D1D;
+      color: #FEE2E2;
+      text-align: center;
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .alert-bar strong { color: #FCA5A5; }
+
+    /* ---- HERO ---- */
+    .hero {
+      background: var(--navy);
+      color: var(--white);
+      padding: 5rem 2rem 4rem;
+      text-align: center;
+      animation: fadeUp 0.5s ease both;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      background: rgba(245,158,11,0.15);
+      color: var(--amber);
+      border: 1px solid rgba(245,158,11,0.3);
+      padding: 0.3rem 1rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.03em;
+      max-width: 780px;
+      margin: 0 auto 1.25rem;
+    }
+    .hero h1 em { color: var(--amber); font-style: normal; }
+    .hero p {
+      color: #94A3B8;
+      font-size: 1.1rem;
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+    }
+
+    /* ---- SCAN FORM ---- */
+    .scan-form {
+      display: flex;
+      gap: 0.75rem;
+      max-width: 620px;
+      margin: 0 auto 1rem;
+      flex-wrap: wrap;
+    }
+    .scan-form input {
+      flex: 1 1 260px;
+      padding: 0.85rem 1.25rem;
+      border: 1px solid #334155;
+      background: #1E293B;
+      color: var(--white);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .scan-form input::placeholder { color: #64748B; }
+    .scan-form input:focus { border-color: var(--amber); }
+    .scan-form input[name="email"] {
+      flex: 1 1 200px;
+    }
+    .btn-primary {
+      background: var(--amber);
+      color: var(--navy);
+      font-weight: 700;
+      border: none;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:hover { background: var(--amber2); }
+    .btn-primary:active { transform: scale(0.98); }
+    .hero-note { color: #475569; font-size: 0.8rem; }
+
+    /* ---- STATS BAR ---- */
+    .stats-bar {
+      background: #111827;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0;
+      border-top: 1px solid #1E293B;
+      border-bottom: 1px solid #1E293B;
+    }
+    .stat-item {
+      padding: 1.25rem 2.5rem;
+      text-align: center;
+      border-right: 1px solid #1E293B;
+    }
+    .stat-item:last-child { border-right: none; }
+    .stat-num {
+      display: block;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--amber);
+    }
+    .stat-label {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    /* ---- TRUST BANNER ---- */
+    .trust-banner {
+      background: #FEF3C7;
+      border-left: 4px solid var(--amber);
+      padding: 1rem 1.5rem;
+      margin: 3rem auto;
+      max-width: 860px;
+      border-radius: 0 8px 8px 0;
+    }
+    .trust-banner p { font-size: 0.875rem; color: #78350F; line-height: 1.5; }
+    .trust-banner strong { color: #92400E; }
+
+    /* ---- SECTION ---- */
+    section { padding: 4rem 2rem; }
+    .container { max-width: 1060px; margin: 0 auto; }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--amber2);
+      margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.75rem;
+    }
+    .section-sub {
+      color: var(--slate);
+      max-width: 560px;
+      font-size: 0.95rem;
+      margin-bottom: 2.5rem;
+    }
+
+    /* ---- HOW IT WORKS ---- */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.5rem; }
+    .step {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      position: relative;
+      animation: fadeUp 0.4s ease both;
+    }
+    .step-num {
+      width: 36px; height: 36px;
+      background: var(--navy);
+      color: var(--amber);
+      font-weight: 800;
+      font-size: 0.9rem;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1rem;
+    }
+    .step h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .step p { font-size: 0.85rem; color: var(--slate); }
+
+    /* ---- DEMO CARD ---- */
+    .demo-card {
+      background: var(--navy);
+      border-radius: 16px;
+      padding: 2rem;
+      color: var(--white);
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .demo-card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .demo-card-header .badge-critical {
+      background: var(--red);
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .demo-card-title { font-size: 1rem; font-weight: 700; flex: 1; }
+    .demo-wcag { font-size: 0.75rem; color: var(--muted); }
+    .code-block {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      font-family: "Courier New", Courier, monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin-bottom: 0.75rem;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-before { background: #2D0A0A; color: #FCA5A5; border-left: 3px solid #DC2626; }
+    .code-after  { background: #052E16; color: #86EFAC; border-left: 3px solid #16A34A; }
+    .code-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .code-label.before { color: #FCA5A5; }
+    .code-label.after  { color: #86EFAC; }
+    .plain-instruction {
+      background: #1E293B;
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      color: #CBD5E1;
+      margin-top: 0.75rem;
+    }
+    .plain-instruction span { color: var(--amber); font-weight: 600; }
+
+    /* ---- PRICING ---- */
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+    .pricing-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      background: var(--white);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .pricing-card:hover { box-shadow: 0 8px 32px rgba(15,23,42,0.1); transform: translateY(-2px); }
+    .pricing-card.popular {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 2px var(--amber);
+    }
+    .popular-badge {
+      display: inline-block;
+      background: var(--amber);
+      color: var(--navy);
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.75rem;
+    }
+    .pricing-name { font-size: 1rem; font-weight: 700; margin-bottom: 0.25rem; }
+    .pricing-price {
+      font-size: 2.25rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--navy);
+    }
+    .pricing-price span { font-size: 1rem; font-weight: 400; color: var(--slate); }
+    .pricing-desc { font-size: 0.85rem; color: var(--slate); margin: 0.5rem 0 1.25rem; }
+    .pricing-features { list-style: none; margin-bottom: 1.75rem; }
+    .pricing-features li {
+      font-size: 0.875rem;
+      padding: 0.35rem 0;
+      color: #334155;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .pricing-features li::before {
+      content: "✓";
+      color: #16A34A;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .btn-outline {
+      display: block;
+      width: 100%;
+      text-align: center;
+      border: 2px solid var(--navy);
+      color: var(--navy);
+      font-weight: 700;
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-outline:hover { background: var(--navy); color: var(--white); }
+    .btn-cta {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: var(--amber);
+      color: var(--navy);
+      font-weight: 700;
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: background 0.15s;
+    }
+    .btn-cta:hover { background: var(--amber2); }
+
+    /* ---- FAQ ---- */
+    .faq-grid { max-width: 720px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--border); padding: 1.25rem 0; }
+    .faq-q { font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem; }
+    .faq-a { color: var(--slate); font-size: 0.875rem; }
+
+    /* ---- FOOTER ---- */
+    footer {
+      background: var(--navy);
+      color: var(--muted);
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.8rem;
+    }
+    footer a { color: var(--amber); text-decoration: none; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .stat-item { padding: 1rem 1.25rem; }
+      .scan-form { flex-direction: column; }
+      .scan-form input { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="nav-logo">FixMyADA</a>
+    <div class="nav-links">
+      <a href="#how-it-works">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="/dashboard">Dashboard demo</a>
+      <a href="/scan/demo-001" class="btn-nav">Free scan</a>
+    </div>
+  </nav>
+
+  <!-- ALERT BAR -->
+  <div class="alert-bar">
+    <strong>ADA lawsuits are up 37% in H1 2025.</strong> 50,000 demand letters sent last year — is yours next?
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-eyebrow">WCAG 2.2 AA Compliance Scanner</div>
+    <h1>Got an ADA demand letter?<br>Find out <em>exactly what's wrong</em><br>and how to fix it.</h1>
+    <p>FixMyADA scans your website and outputs copy-paste HTML fix snippets — one per violation. Hand them to any developer and your site is compliant.</p>
+
+    <form class="scan-form" method="POST" action="/scan">
+      <input type="email" name="email" placeholder="Your email address" required>
+      <input type="url" name="url" placeholder="https://yourwebsite.com" required>
+      <button type="submit" class="btn-primary">Scan for free &rarr;</button>
+    </form>
+    <p class="hero-note">No credit card required &middot; Results in under 60 seconds &middot; First scan always free</p>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <span class="stat-num">50,000</span>
+      <span class="stat-label">Demand letters sent in 2025</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">8,800</span>
+      <span class="stat-label">ADA lawsuits filed in 2024</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">$5K–$25K</span>
+      <span class="stat-label">Average settlement cost</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-num">$1M</span>
+      <span class="stat-label">FTC fine — AccessiBe (Jan 2025)</span>
+    </div>
+  </div>
+
+  <!-- TRUST BANNER -->
+  <div class="trust-banner container">
+    <p><strong>Overlays don't work — and now the FTC agrees.</strong> AccessiBe was fined $1M in January 2025 for deceptive WCAG compliance claims. UserWay faces a class action. Sites using overlay widgets accounted for 22.6% of ADA lawsuits in H1 2025. The only real fix is fixing your code. That's exactly what FixMyADA helps you do.</p>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works" style="background: var(--surface);">
+    <div class="container">
+      <div class="section-label">How it works</div>
+      <h2 class="section-title">From demand letter to fix checklist in minutes</h2>
+      <p class="section-sub">Built for business owners, not developers. You don't need to understand WCAG — we translate it for you.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Enter your URL</h3>
+          <p>Paste your website address. No account required for your first scan. No credit card, ever.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>We scan your site</h3>
+          <p>Our engine runs a full WCAG 2.2 AA check using axe-core — the same engine used by legal experts and enterprise compliance teams.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Get your violation list</h3>
+          <p>Every issue ranked by severity: Critical, Serious, Moderate. Each one mapped to its WCAG criterion and the exact HTML element causing it.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h3>Copy the fix snippets</h3>
+          <p>For each violation: broken HTML + corrected HTML + plain-English instruction. Hand it to your developer or fix it yourself.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <h3>Download PDF report</h3>
+          <p>Attorney-ready WCAG 2.2 AA compliance report. Send it to your lawyer before the settlement call.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <h3>Monitor &amp; certify</h3>
+          <p>Scheduled rescans confirm fixes were applied. Once clean, download your compliance certificate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEMO VIOLATION CARD -->
+  <section id="demo">
+    <div class="container">
+      <div class="section-label">The differentiator</div>
+      <h2 class="section-title">Every violation comes with a code fix</h2>
+      <p class="section-sub">No other tool at this price gives you the before/after HTML. This is what you hand to your developer.</p>
+
+      <div class="demo-card">
+        <div class="demo-card-header">
+          <span class="badge-critical">Critical</span>
+          <div>
+            <div class="demo-card-title">Image missing alternative text</div>
+            <div class="demo-wcag">WCAG 1.1.1 Non-text Content &mdash; Level A</div>
+          </div>
+        </div>
+        <div class="code-label before">Before (broken)</div>
+        <div class="code-block code-before">&lt;img src="/hero.jpg"&gt;</div>
+        <div class="code-label after">After (fixed)</div>
+        <div class="code-block code-after">&lt;img src="/hero.jpg" alt="Smiling customer service representative at front desk"&gt;</div>
+        <div class="plain-instruction"><span>What to do:</span> Add a descriptive alt attribute that conveys the purpose of the image to screen reader users.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section id="pricing" style="background: var(--surface);">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2 class="section-title">Less than your attorney's first phone call</h2>
+      <p class="section-sub">Average ADA settlement: $5,000–$25,000. Average attorney consultation: $350–$500/hr. FixMyADA pays for itself on day one.</p>
+
+      <div class="pricing-grid">
+        <div class="pricing-card">
+          <div class="pricing-name">Starter</div>
+          <div class="pricing-price">$29<span>/mo</span></div>
+          <div class="pricing-desc">One domain. Monthly scan. Full code-fix report.</div>
+          <ul class="pricing-features">
+            <li>1 domain monitored</li>
+            <li>Up to 50 pages per scan</li>
+            <li>Monthly automated rescan</li>
+            <li>Full violation list + code-fix snippets</li>
+            <li>WCAG criterion per violation</li>
+            <li>Email alert on new violations</li>
+          </ul>
+          <a href="/scan/demo-001" class="btn-outline">Start free scan</a>
+        </div>
+
+        <div class="pricing-card popular">
+          <div class="popular-badge">Most popular</div>
+          <div class="pricing-name">Business</div>
+          <div class="pricing-price">$79<span>/mo</span></div>
+          <div class="pricing-desc">One domain. Weekly scan. PDF compliance report.</div>
+          <ul class="pricing-features">
+            <li>1 domain monitored</li>
+            <li>Up to 500 pages per scan</li>
+            <li>Weekly automated rescan</li>
+            <li>Full violation list + code-fix snippets</li>
+            <li><strong>Attorney-ready PDF report</strong></li>
+            <li>Priority violation scoring</li>
+            <li>Email digest on new issues</li>
+          </ul>
+          <a href="/scan/demo-001" class="btn-cta">Get started</a>
+        </div>
+
+        <div class="pricing-card">
+          <div class="pricing-name">Agency</div>
+          <div class="pricing-price">$199<span>/mo</span></div>
+          <div class="pricing-desc">10 domains. Weekly scans. White-label PDFs.</div>
+          <ul class="pricing-features">
+            <li>10 domains monitored</li>
+            <li>Up to 500 pages per domain</li>
+            <li>Weekly automated rescans</li>
+            <li>Full violation list + code-fix snippets</li>
+            <li>White-label PDF reports</li>
+            <li>Client-facing dashboard</li>
+            <li>Compliance certificate per domain</li>
+          </ul>
+          <a href="/scan/demo-001" class="btn-outline">Contact us</a>
+        </div>
+      </div>
+
+      <p style="text-align:center; margin-top:1.5rem; font-size:0.85rem; color:var(--slate);">
+        Need a one-time audit? <a href="#" style="color:var(--amber2); font-weight:600;">Emergency PDF Report — $149</a> (no subscription required)
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="container">
+      <div class="section-label">FAQ</div>
+      <h2 class="section-title">Common questions</h2>
+      <div class="faq-grid">
+        <div class="faq-item">
+          <div class="faq-q">Will fixing the issues in your report make me legally safe?</div>
+          <div class="faq-a">Automated scanning catches ~57% of WCAG violations. Our report documents your effort to remediate issues and can demonstrate good-faith compliance to opposing counsel. We recommend pairing with a manual audit for any active litigation. We are not legal counsel.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Is an overlay widget like AccessiBe a valid alternative?</div>
+          <div class="faq-a">No. The FTC fined AccessiBe $1M in January 2025 for deceptive compliance claims. Overlay widgets cannot fix server-rendered markup. 22.6% of ADA lawsuits in H1 2025 targeted sites already running an overlay. Code fixes are the only defensible approach.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">Do I need a developer to use this?</div>
+          <div class="faq-a">Not for the scan. You'll need a developer (or your webmaster) to apply the code fixes — but we give them the exact HTML changes required. Most developers can implement a full FixMyADA report in 2–4 hours.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q">What WCAG standard do you test against?</div>
+          <div class="faq-a">WCAG 2.2 AA — the standard codified by the DOJ's April 2024 Final Rule and required by ADA Title III case law in the 9th and 11th Circuits.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>&copy; 2026 FixMyADA &mdash; <a href="#">Privacy</a> &middot; <a href="#">Terms</a> &middot; <a href="mailto:hello@fixmyada.com">hello@fixmyada.com</a></p>
+    <p style="margin-top:0.5rem;">FixMyADA is not a law firm and does not provide legal advice. WCAG scan results do not constitute a legal compliance certification.</p>
+  </footer>
+
+</body>
+</html>
